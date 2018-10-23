@@ -59,6 +59,8 @@
 #include <net/bluetooth/hci_core.h> /* event notifications */
 #include "hci_uart.h"
 
+#include <linux/jiffies.h>
+
 #define BT_SLEEP_DBG
 #ifndef BT_SLEEP_DBG
 #define BT_DBG(fmt, arg...)
@@ -228,7 +230,8 @@ void bluesleep_sleep_wakeup(void)
 
 		wake_lock(&bsi->wake_lock);
 		/* Start the timer */
-		mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
+                mod_timer(&tx_timer,
+		          jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 		if (debug_mask & DEBUG_BTWAKE)
 			pr_info("BT WAKE: set to wake\n");
 		if (bsi->has_ext_wake == 1)
@@ -278,15 +281,17 @@ static void bluesleep_sleep_work(struct work_struct *work)
 			/* UART clk is not turned off immediately. Release
 			 * wakelock after 500 ms.
 			 */
-			wake_lock_timeout(&bsi->wake_lock, HZ / 2);
+			wake_lock_timeout(&bsi->wake_lock, msecs_to_jiffies(500));
 		} else {
 
-		  mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
+		  mod_timer(&tx_timer,
+		          jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 			return;
 		}
 	} else if (test_bit(BT_EXT_WAKE, &flags)
 			&& !test_bit(BT_ASLEEP, &flags)) {
-		mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL * HZ));
+		mod_timer(&tx_timer,
+		          jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 		if (debug_mask & DEBUG_BTWAKE)
 			pr_info("BT WAKE: set to wake\n");
 		if (bsi->has_ext_wake == 1)
@@ -499,7 +504,8 @@ static void bluesleep_tx_timer_expire(unsigned long data)
 	} else {
 		if (debug_mask & DEBUG_SUSPEND)
 			pr_info("Tx data during last period\n");
-		mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL*HZ));
+		mod_timer(&tx_timer,
+                          jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 	}
 
 	/* clear the incoming data flag */
@@ -548,7 +554,8 @@ static int bluesleep_start(void)
 
 	/* start the timer */
 
-	mod_timer(&tx_timer, jiffies + (TX_TIMER_INTERVAL*HZ));
+	mod_timer(&tx_timer,
+                  jiffies + msecs_to_jiffies(TX_TIMER_INTERVAL * 1000));
 
 	/* assert BT_WAKE */
 	if (debug_mask & DEBUG_BTWAKE)
@@ -625,7 +632,7 @@ static void bluesleep_stop(void)
 		(gpio_get_value(bsi->host_wake) != bsi->irq_polarity),
 		(test_bit(BT_EXT_WAKE, &flags)),
 		bsi->uport != NULL, has_lpm_enabled);
-	wake_lock_timeout(&bsi->wake_lock, HZ / 2);
+	wake_lock_timeout(&bsi->wake_lock, msecs_to_jiffies(500));
 }
 /**
  * Read the <code>BT_WAKE</code> GPIO pin value via the proc interface.

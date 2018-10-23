@@ -49,6 +49,8 @@
 #include <linux/skbuff.h>
 #include <linux/serial_core.h>
 
+#include <linux/jiffies.h>
+
 #ifdef CONFIG_SERIAL_MSM_HS
 #include <mach/msm_serial_hs.h>
 #endif
@@ -93,7 +95,7 @@ enum hci_ibs_clock_state_vote_e {
 };
 
 static unsigned long wake_retrans = 1;
-static unsigned long tx_idle_delay = (HZ * 2);
+static unsigned long tx_idle_delay = msecs_to_jiffies(2000);
 
 struct hci_ibs_cmd {
 	u8 cmd;
@@ -902,7 +904,7 @@ int ibs_deinit(void)
 }
 
 module_param(wake_retrans, ulong, 0644);
-MODULE_PARM_DESC(wake_retrans, "Delay (1/HZ) to retransmit WAKE_IND");
+MODULE_PARM_DESC(wake_retrans, "Delay (ms) to retransmit WAKE_IND");
 
 module_param(tx_idle_delay, ulong, 0644);
-MODULE_PARM_DESC(tx_idle_delay, "Delay (1/HZ) since last tx for SLEEP_IND");
+MODULE_PARM_DESC(tx_idle_delay, "Delay (ms) since last tx for SLEEP_IND");
